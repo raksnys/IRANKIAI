@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../environments/environment';
+import {interval, Subscription} from 'rxjs';
 
 interface GridCell {
   x: number;
@@ -18,17 +19,31 @@ interface GridCell {
   styleUrl: './telemetry.component.scss',
   standalone: true
 })
-export class TelemetryComponent implements OnInit {
+export class TelemetryComponent implements OnInit, OnDestroy {
   gridCells: GridCell[] = [];
+  private refreshSubscription: Subscription | null = null;
+  private currentType: GridCell['type'] | undefined;
+
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    // Fetch all grid data on component initialization
     this.fetchGridData();
+
+    this.refreshSubscription = interval(1000).subscribe(() => {
+      this.fetchGridData(this.currentType);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshSubscription) {
+      this.refreshSubscription.unsubscribe();
+    }
   }
 
   fetchGridData(type?: GridCell['type']): void {
+    this.currentType = type;
+    
     const url = type
       ? `${environment.apiUrl}/grid/byType?type=${type}`
       : `${environment.apiUrl}/grid/byType`;
