@@ -31,7 +31,7 @@ public class RobotController {
         return robot.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/robots")
     public List<Robot> getAllRobots() {
         return robotService.getAllRobots();
@@ -42,22 +42,22 @@ public class RobotController {
         Robot savedRobot = robotService.addRobot(robot);
         return new ResponseEntity<>(savedRobot, HttpStatus.CREATED);
     }
-    
+
     @PutMapping("/robot")
     public ResponseEntity<Robot> updateRobot(@RequestBody Robot robot) {
         Robot updatedRobot = robotService.updateRobot(robot);
         return ResponseEntity.ok(updatedRobot);
     }
-    
+
     @DeleteMapping("/robot/{id}")
     public ResponseEntity<Void> deleteRobot(@PathVariable Integer id) {
         robotService.deleteRobot(id);
         return ResponseEntity.noContent().build();
     }
-    
+
     @PostMapping("/robot/{robotId}/pickup/{containerId}")
     public ResponseEntity<Robot> pickupContainer(
-            @PathVariable Integer robotId, 
+            @PathVariable Integer robotId,
             @PathVariable Integer containerId) {
         Robot robot = robotService.pickupContainer(robotId, containerId);
         if (robot != null) {
@@ -65,7 +65,7 @@ public class RobotController {
         }
         return ResponseEntity.badRequest().build();
     }
-    
+
     @PostMapping("/robot/{robotId}/drop")
     public ResponseEntity<Robot> dropContainer(@PathVariable Integer robotId) {
         Robot robot = robotService.dropContainer(robotId);
@@ -74,7 +74,7 @@ public class RobotController {
         }
         return ResponseEntity.badRequest().build();
     }
-    
+
     @PostMapping("/robot/{robotId}/charge")
     public ResponseEntity<Robot> chargeBattery(
             @PathVariable Integer robotId,
@@ -84,5 +84,16 @@ public class RobotController {
             return ResponseEntity.ok(robot);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/robot/{robotId}/pickup/cache/{cacheId}")
+    public ResponseEntity<Robot> pickupContainerFromCache(
+            @PathVariable Integer robotId,
+            @PathVariable Integer cacheId) {
+        Robot robot = robotService.pickupContainerFromCache(robotId, cacheId);
+        if (robot != null) {
+            return ResponseEntity.ok(robot);
+        }
+        return ResponseEntity.badRequest().build();
     }
 }

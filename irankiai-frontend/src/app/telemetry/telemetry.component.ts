@@ -1,9 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { NgFor,NgClass, NgIf } from '@angular/common';
+import { NgFor, NgClass, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../environments/environment';
-import {interval, Subscription} from 'rxjs';
+import { interval, Subscription } from 'rxjs';
 
 interface GridCell {
   x: number;
@@ -25,7 +25,7 @@ export class TelemetryComponent implements OnInit, OnDestroy {
   private currentType: GridCell['type'] | undefined;
 
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.fetchGridData();
@@ -43,11 +43,11 @@ export class TelemetryComponent implements OnInit, OnDestroy {
 
   fetchGridData(type?: GridCell['type']): void {
     this.currentType = type;
-    
+
     const url = type
       ? `${environment.apiUrl}/grid/byType?type=${type}`
       : `${environment.apiUrl}/grid/byType`;
-    
+
     this.http.get<GridCell[]>(url)
       .subscribe({
         next: (data) => {
@@ -61,39 +61,45 @@ export class TelemetryComponent implements OnInit, OnDestroy {
 
   addCell(x: number, y: number, type: string): void {
     const cellType = type as GridCell['type'];
-    
+
     const gridLocation = { x, y, z: 0 };
-    
+
     let endpoint = '';
     let payload = {};
-    
-    switch(cellType) {
+
+    switch (cellType) {
       case 'CONTAINER':
         endpoint = `${environment.apiUrl}/container`;
-        payload = { 
+        payload = {
           location: gridLocation,
-          products: [] 
+          products: []
         };
         break;
       case 'ROBOT':
         endpoint = `${environment.apiUrl}/robot`;
-        payload = { 
+        payload = {
           location: gridLocation,
-          batteryLevel: 100 
+          batteryLevel: 100
         };
         break;
       case 'CHARGING_STATION':
         endpoint = `${environment.apiUrl}/chargingStation`;
-        payload = { 
-          location: gridLocation 
+        payload = {
+          location: gridLocation
         };
         break;
-        // TODO: Pridet likusius cases...
+      case 'CACHE':
+        endpoint = `${environment.apiUrl}/cache`;
+        payload = {
+          location: gridLocation
+        };
+        break;
+      // TODO: Pridet likusius cases...
       default:
         console.error(`Unsupported type: ${cellType}`);
         return;
     }
-    
+
     this.http.post(endpoint, payload).subscribe({
       next: (response) => {
         console.log(`Added ${cellType} at position (${x},${y})`);

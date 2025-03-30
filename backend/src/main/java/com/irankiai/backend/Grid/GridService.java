@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.irankiai.backend.Cache.Cache;
+import com.irankiai.backend.Cache.CacheRepository;
 import com.irankiai.backend.ChargingStation.ChargingStation;
 import com.irankiai.backend.ChargingStation.ChargingStationRepository;
 import com.irankiai.backend.Container.Container;
@@ -63,6 +65,9 @@ public class GridService {
                 case "CHARGING_STATION":
                     addChargingStationsToGrid(result);
                     break;
+                case "CACHE":
+                    addCachesToGrid(result);
+                    break;
             }
         }
 
@@ -73,6 +78,7 @@ public class GridService {
         addContainersToGrid(result);
         addRobotsToGrid(result);
         addChargingStationsToGrid(result);
+        addCachesToGrid(result);
     }
 
     private void addContainersToGrid(List<GridDTO> result) {
@@ -103,9 +109,6 @@ public class GridService {
         }
     }
 
-
-    // TODO: taip, turetu autowired visi virsuj but vienoj vietoj bet as bbd.
-
     @Autowired
     private ChargingStationRepository chargingStationRepository;
 
@@ -114,6 +117,17 @@ public class GridService {
         for (ChargingStation station : stations) {
             Grid grid = station.getLocation();
             result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CHARGING_STATION"));
+        }
+    }
+
+    @Autowired
+    private CacheRepository cacheRepository;
+
+    private void addCachesToGrid(List<GridDTO> result) {
+        List<Cache> caches = cacheRepository.findAll();
+        for (Cache cache : caches) {
+            Grid grid = cache.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CACHE"));
         }
     }
 }
