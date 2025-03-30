@@ -30,7 +30,7 @@ export class TelemetryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fetchGridData();
 
-    this.refreshSubscription = interval(1000).subscribe(() => {
+    this.refreshSubscription = interval(460).subscribe(() => {
       this.fetchGridData(this.currentType);
     });
   }
