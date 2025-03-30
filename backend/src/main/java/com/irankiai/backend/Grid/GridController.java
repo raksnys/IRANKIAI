@@ -31,7 +31,7 @@ public class GridController {
         return grid.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/grids")
     public List<Grid> getAllGrids() {
         return gridService.getAllGrids();
@@ -42,16 +42,22 @@ public class GridController {
         Grid savedGrid = gridService.addGrid(grid);
         return new ResponseEntity<>(savedGrid, HttpStatus.CREATED);
     }
-    
+
     @PutMapping("/grid")
     public ResponseEntity<Grid> updateGrid(@RequestBody Grid grid) {
         Grid updatedGrid = gridService.updateGrid(grid);
         return ResponseEntity.ok(updatedGrid);
     }
-    
+
     @DeleteMapping("/grid/{id}")
     public ResponseEntity<Void> deleteGrid(@PathVariable Integer id) {
         gridService.deleteGrid(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/grid/byType")
+    public ResponseEntity<List<GridDTO>> getGridByType(@RequestParam(required = false) String type) {
+        List<GridDTO> gridDTOs = gridService.getGridByType(type);
+        return ResponseEntity.ok(gridDTOs);
     }
 }
