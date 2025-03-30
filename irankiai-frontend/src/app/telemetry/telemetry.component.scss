@@ -19,10 +19,8 @@
     overflow: hidden;
 
   
-  // Default style
   background-color: gray;
   
-  // Type-specific styles
   &.robot {
     background-color: #00631e;
   }
@@ -87,7 +85,7 @@
       cursor: pointer;
       
       &:hover {
-        background-color: #444;
+        background-color: #00631e;
       }
     }
   }
@@ -113,7 +111,7 @@
       cursor: pointer;
       
       &:hover {
-        background-color: #333;
+        background-color: #00631e;
       }
     }
   }
