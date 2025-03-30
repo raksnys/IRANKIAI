@@ -30,7 +30,9 @@
            *ngFor="let cell of gridCells"
            [style.grid-column]="cell.x + 1"
            [style.grid-row]="cell.y + 1"
-           [ngClass]="cell.type.toLowerCase()">
+           [ngClass]="cell.type.toLowerCase()"
+           (click)="handleCellClick(cell)"
+           >
         <div class="icon">
           <i *ngIf="cell.type === 'ROBOT'" class="fa-solid fa-robot"></i>
           <i *ngIf="cell.type === 'CONTAINER'" class="fa-solid fa-box"></i>
@@ -42,3 +44,48 @@
         <div class="coordinates">{{cell.x}}x{{cell.y}}</div>
       </div>
     </div>
+
+    
+<!-- Robot Details Modal -->
+<div class="modal" *ngIf="selectedRobot">
+  <div class="modal-content">
+    <span class="close" (click)="closeModal()">&times;</span>
+    <h2>Robot Information</h2>
+    <div class="robot-info">
+      <p><strong>Robot ID:</strong> {{selectedRobot.id}}</p>
+      <p><strong>Location:</strong> ({{selectedRobot.location.x}}, {{selectedRobot.location.y}}, {{selectedRobot.location.z}})</p>
+      <p><strong>Battery Level:</strong> {{selectedRobot.batteryLevel}}%</p>
+      
+      <div *ngIf="selectedRobot.container">
+        <h3>Container Information <button (click)="showContainerDetails(selectedRobot.container.id)">View Details</button></h3>
+        <p><strong>Container ID:</strong> {{selectedRobot.container.id}}</p>
+      </div>
+      <div *ngIf="!selectedRobot.container">
+        <p>Not carrying a container</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Container Details Modal -->
+<div class="modal" *ngIf="selectedContainer">
+  <div class="modal-content">
+    <span class="close" (click)="closeContainerModal()">&times;</span>
+    <h2>Container Information</h2>
+    <div class="container-info">
+      <p><strong>Container ID:</strong> {{selectedContainer.id}}</p>
+      <p><strong>Location:</strong> ({{selectedContainer.location.x}}, {{selectedContainer.location.y}}, {{selectedContainer.location.z}})</p>
+      
+      <h3>Products</h3>
+      <div *ngIf="selectedContainer.products && selectedContainer.products.length > 0">
+        <div class="product-item" *ngFor="let product of selectedContainer.products">
+          <p><strong>{{product.name}}</strong> - €{{product.price}}</p>
+          <p>{{product.dimensions}} - {{product.weight}}kg</p>
+        </div>
+      </div>
+      <div *ngIf="!selectedContainer.products || selectedContainer.products.length === 0">
+        <p>No products in this container</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,15 +5,17 @@ public class GridDTO {
     private int y;
     private int z;
     private String type;
+    private int entityId;
 
     public GridDTO() {
     }
 
-    public GridDTO(int x, int y, int z, String type) {
+    public GridDTO(int x, int y, int z, String type, int entityId) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.type = type;
+        this.entityId = entityId;
     }
 
     // Getters and setters
@@ -48,4 +50,7 @@ public class GridDTO {
     public void setType(String type) {
         this.type = type;
     }
+
+    public int getEntityId() { return entityId; }
+    public void setEntityId(int entityId) { this.entityId = entityId; }
 }

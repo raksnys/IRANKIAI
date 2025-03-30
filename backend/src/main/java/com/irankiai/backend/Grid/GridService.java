@@ -96,16 +96,16 @@ public class GridService {
     private void addContainersToGrid(List<GridDTO> result) {
         List<Container> containers = containerRepository.findAll();
         List<Robot> robots = robotRepository.findAll();
-
+        
         List<Integer> carriedContainerIds = robots.stream()
                 .filter(Robot::isCarryingContainer)
                 .map(robot -> robot.getContainer().getId())
                 .toList();
-
+        
         for (Container container : containers) {
             if (!carriedContainerIds.contains(container.getId())) {
                 Grid grid = container.getLocation();
-                result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CONTAINER"));
+                result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CONTAINER", container.getId()));
             }
         }
     }
@@ -117,7 +117,7 @@ public class GridService {
         List<Robot> robots = robotRepository.findAll();
         for (Robot robot : robots) {
             Grid grid = robot.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "ROBOT"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "ROBOT", robot.getId()));
         }
     }
 
@@ -128,7 +128,7 @@ public class GridService {
         List<ChargingStation> stations = chargingStationRepository.findAll();
         for (ChargingStation station : stations) {
             Grid grid = station.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CHARGING_STATION"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CHARGING_STATION", station.getId()));
         }
     }
 
@@ -139,7 +139,7 @@ public class GridService {
         List<Cache> caches = cacheRepository.findAll();
         for (Cache cache : caches) {
             Grid grid = cache.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CACHE"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CACHE", cache.getId()));
         }
     }
 
@@ -150,7 +150,7 @@ public class GridService {
         List<CollectOrder> collectOrders = collectOrderRepository.findAll();
         for (CollectOrder collectOrder : collectOrders) {
             Grid grid = collectOrder.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "COLLECT_ORDER"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "COLLECT_ORDER", collectOrder.getId()));
         }
     }
 
@@ -161,7 +161,7 @@ public class GridService {
         List<DeliverOrder> deliverOrders = deliverOrderRepository.findAll();
         for (DeliverOrder deliverOrder : deliverOrders) {
             Grid grid = deliverOrder.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "DELIVER_ORDER"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "DELIVER_ORDER", deliverOrder.getId()));
         }
     }
 

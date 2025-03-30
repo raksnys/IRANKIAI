@@ -10,6 +10,7 @@ interface GridCell {
   y: number;
   z: number;
   type: 'ROBOT' | 'CONTAINER' | 'CHARGING_STATION' | 'CACHE' | 'COLLECT_ORDER' | 'DELIVER_ORDER';
+  entityId: number;
 }
 
 @Component({
@@ -23,6 +24,8 @@ export class TelemetryComponent implements OnInit, OnDestroy {
   gridCells: GridCell[] = [];
   private refreshSubscription: Subscription | null = null;
   private currentType: GridCell['type'] | undefined;
+  selectedRobot: any = null;
+  selectedContainer: any = null;
 
 
   constructor(private http: HttpClient) { }
@@ -121,5 +124,46 @@ export class TelemetryComponent implements OnInit, OnDestroy {
         console.error(`Error adding ${cellType}:`, error);
       }
     });
+  }
+  handleCellClick(cell: GridCell): void {
+    switch(cell.type) {
+      case 'ROBOT':
+        this.showRobotDetails(cell.entityId);
+        break;
+      case 'CONTAINER':
+        this.showContainerDetails(cell.entityId);
+        break;
+      // Add more cases if you want to show details for other entity types
+    }
+  }
+  
+  showRobotDetails(robotId: number): void {
+    this.http.get(`${environment.apiUrl}/robot?id=${robotId}`).subscribe({
+      next: (robot: any) => {
+        this.selectedRobot = robot;
+      },
+      error: (error) => {
+        console.error('Error fetching robot details:', error);
+      }
+    });
+  }
+  
+  closeModal(): void {
+    this.selectedRobot = null;
+  }
+  
+  showContainerDetails(containerId: number): void {
+    this.http.get(`${environment.apiUrl}/container?id=${containerId}`).subscribe({
+      next: (containerDetails: any) => {
+        this.selectedContainer = containerDetails;
+      },
+      error: (error) => {
+        console.error('Error fetching container details:', error);
+      }
+    });
+  }
+  
+  closeContainerModal(): void {
+    this.selectedContainer = null;
   }
 }
