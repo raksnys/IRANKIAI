@@ -33,7 +33,7 @@ public class ContainerController {
         return container.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/containers")
     public List<Container> getAllContainers() {
         return containerService.getAllContainers();
@@ -44,33 +44,33 @@ public class ContainerController {
         Container savedContainer = containerService.addContainer(container);
         return new ResponseEntity<>(savedContainer, HttpStatus.CREATED);
     }
-    
+
     @PutMapping("/container")
     public ResponseEntity<Container> updateContainer(@RequestBody Container container) {
         Container updatedContainer = containerService.updateContainer(container);
         return ResponseEntity.ok(updatedContainer);
     }
-    
+
     @DeleteMapping("/container/{id}")
     public ResponseEntity<Void> deleteContainer(@PathVariable Integer id) {
         containerService.deleteContainer(id);
         return ResponseEntity.noContent().build();
     }
-    
-    @PostMapping("/container/{id}/product")
+
+    @PostMapping("/container/{containerId}/product/{productId}")
     public ResponseEntity<Container> addProductToContainer(
-            @PathVariable Integer id, 
-            @RequestBody Product product) {
-        Container container = containerService.addProductToContainer(id, product);
+            @PathVariable Integer containerId,
+            @PathVariable Integer productId) {
+        Container container = containerService.addProductToContainer(containerId, productId);
         if (container != null) {
             return ResponseEntity.ok(container);
         }
         return ResponseEntity.notFound().build();
     }
-    
+
     @DeleteMapping("/container/{id}/product")
     public ResponseEntity<Container> removeProductFromContainer(
-            @PathVariable Integer id, 
+            @PathVariable Integer id,
             @RequestBody Product product) {
         Container container = containerService.removeProductFromContainer(id, product);
         if (container != null) {

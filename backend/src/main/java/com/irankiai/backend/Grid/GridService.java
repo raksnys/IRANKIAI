@@ -7,12 +7,18 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.irankiai.backend.Cache.Cache;
+import com.irankiai.backend.Cache.CacheRepository;
 import com.irankiai.backend.ChargingStation.ChargingStation;
 import com.irankiai.backend.ChargingStation.ChargingStationRepository;
 import com.irankiai.backend.Container.Container;
 import com.irankiai.backend.Container.ContainerRepository;
 import com.irankiai.backend.Robot.Robot;
 import com.irankiai.backend.Robot.RobotRepository;
+import com.irankiai.backend.CollectOrder.CollectOrder;
+import com.irankiai.backend.CollectOrder.CollectOrderRepository;
+import com.irankiai.backend.DeliverOrder.DeliverOrder;
+import com.irankiai.backend.DeliverOrder.DeliverOrderRepository;
 
 @Service
 public class GridService {
@@ -63,6 +69,15 @@ public class GridService {
                 case "CHARGING_STATION":
                     addChargingStationsToGrid(result);
                     break;
+                case "CACHE":
+                    addCachesToGrid(result);
+                    break;
+                case "COLLECT_ORDER":
+                    addCollectOrdersToGrid(result);
+                    break;
+                case "DELIVER_ORDER":
+                    addDeliverOrdersToGrid(result);
+                    break;
             }
         }
 
@@ -73,21 +88,24 @@ public class GridService {
         addContainersToGrid(result);
         addRobotsToGrid(result);
         addChargingStationsToGrid(result);
+        addCachesToGrid(result);
+        addCollectOrdersToGrid(result);
+        addDeliverOrdersToGrid(result);
     }
 
     private void addContainersToGrid(List<GridDTO> result) {
         List<Container> containers = containerRepository.findAll();
         List<Robot> robots = robotRepository.findAll();
-
+        
         List<Integer> carriedContainerIds = robots.stream()
                 .filter(Robot::isCarryingContainer)
                 .map(robot -> robot.getContainer().getId())
                 .toList();
-
+        
         for (Container container : containers) {
             if (!carriedContainerIds.contains(container.getId())) {
                 Grid grid = container.getLocation();
-                result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CONTAINER"));
+                result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CONTAINER", container.getId()));
             }
         }
     }
@@ -99,12 +117,9 @@ public class GridService {
         List<Robot> robots = robotRepository.findAll();
         for (Robot robot : robots) {
             Grid grid = robot.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "ROBOT"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "ROBOT", robot.getId()));
         }
     }
-
-
-    // TODO: taip, turetu autowired visi virsuj but vienoj vietoj bet as bbd.
 
     @Autowired
     private ChargingStationRepository chargingStationRepository;
@@ -113,7 +128,41 @@ public class GridService {
         List<ChargingStation> stations = chargingStationRepository.findAll();
         for (ChargingStation station : stations) {
             Grid grid = station.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CHARGING_STATION"));
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CHARGING_STATION", station.getId()));
         }
     }
+
+    @Autowired
+    private CacheRepository cacheRepository;
+
+    private void addCachesToGrid(List<GridDTO> result) {
+        List<Cache> caches = cacheRepository.findAll();
+        for (Cache cache : caches) {
+            Grid grid = cache.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CACHE", cache.getId()));
+        }
+    }
+
+    @Autowired
+    private CollectOrderRepository collectOrderRepository;
+
+    private void addCollectOrdersToGrid(List<GridDTO> result) {
+        List<CollectOrder> collectOrders = collectOrderRepository.findAll();
+        for (CollectOrder collectOrder : collectOrders) {
+            Grid grid = collectOrder.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "COLLECT_ORDER", collectOrder.getId()));
+        }
+    }
+
+    @Autowired
+    private DeliverOrderRepository deliverOrderRepository;
+
+    private void addDeliverOrdersToGrid(List<GridDTO> result) {
+        List<DeliverOrder> deliverOrders = deliverOrderRepository.findAll();
+        for (DeliverOrder deliverOrder : deliverOrders) {
+            Grid grid = deliverOrder.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "DELIVER_ORDER", deliverOrder.getId()));
+        }
+    }
+
 }
