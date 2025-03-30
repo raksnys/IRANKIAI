@@ -1,0 +1,36 @@
+<div class="product-container">
+    <div *ngIf="loading" class="loading">Loading product details...</div>
+    
+    <div *ngIf="error" class="error">
+      Error loading product. Please try again later.
+    </div>
+    
+    <div *ngIf="!loading && !error && product" class="product-details">
+      <h1>{{ product.name }}</h1>
+      
+      <div class="product-info">
+        <div class="info-row">
+          <span class="label">ID:</span>
+          <span class="value">{{ product.id }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Dimensions:</span>
+          <span class="value">{{ product.dimensions }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Weight:</span>
+          <span class="value">{{ product.weight }} kg</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Price:</span>
+          <span class="value">€{{ product.price }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Color:</span>
+          <span class="value">{{ product.color }}</span>
+        </div>
+      </div>
+      
+      <button (click)="goBack()">Back to Products</button>
+    </div>
+  </div>
