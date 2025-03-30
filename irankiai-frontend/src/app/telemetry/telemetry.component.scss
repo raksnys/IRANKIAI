@@ -1,0 +1,30 @@
+.grid{
+    display:grid;
+    grid-template-columns: repeat(45, 2rem);
+    grid-template-rows: repeat(45, 2rem);
+    background-color: #ffffff;
+    width: fit-content;
+    color: gray;
+}
+
+.box{
+    color: white;
+    height: 2rem;
+    background-color: gray;
+    border-radius: 5px;
+    border-color: #00631e;
+    border-width: 5px;
+    margin: 2px;
+}
+
+.filter-buttons{
+    display: flex;
+    justify-content: space-evenly;
+    justify-items: center;
+}
+
+.add-cell-form{
+    margin-top: 2rem;
+    display:flex;
+    justify-content: right;
+}

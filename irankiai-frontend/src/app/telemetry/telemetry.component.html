@@ -1,0 +1,36 @@
+<div class="telemetry-container">
+    <div class="filter-buttons">
+      <button (click)="fetchGridData()">All</button>
+      <button (click)="fetchGridData('ROBOT')">Robots</button>
+      <button (click)="fetchGridData('CONTAINER')">Containers</button>
+      <button (click)="fetchGridData('CHARGING_STATION')">Charging Stations</button>
+      <button (click)="fetchGridData('CACHE')">Cache</button>
+      <button (click)="fetchGridData('COLLECT_ORDER')">Collect Orders</button>
+      <button (click)="fetchGridData('DELIVER_ORDER')">Deliver Orders</button>
+    </div>
+  
+    <!-- Add cell form using template reference variables -->
+    <div class="add-cell-form">
+      <input type="number" class="cell-int" #xCoord placeholder="X coordinate">
+      <input type="number" class="cell-int" #yCoord placeholder="Y coordinate">
+      <select #cellType>
+        <option value="ROBOT">Robot</option>
+        <option value="CONTAINER">Container</option>
+        <option value="CHARGING_STATION">Charging Station</option>
+        <option value="CACHE">Cache</option>
+        <option value="COLLECT_ORDER">Collect Order</option>
+        <option value="DELIVER_ORDER">Deliver Order</option>
+      </select>
+      <button (click)="addCell(+xCoord.value, +yCoord.value, cellType.value)">Add Cell</button>
+    </div>
+  
+    <!-- Grid display -->
+    <div class="grid">
+      <div class="box" 
+           *ngFor="let cell of gridCells"
+           [style.grid-column]="cell.x + 1"
+           [style.grid-row]="cell.y + 1">
+        {{cell.x}}x{{cell.y}}<br>{{cell.type}}
+      </div>
+    </div>
+  </div>
