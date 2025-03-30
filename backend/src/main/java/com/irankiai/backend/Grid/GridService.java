@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.irankiai.backend.Container.Container;
 import com.irankiai.backend.Container.ContainerRepository;
+import com.irankiai.backend.Robot.Robot;
+import com.irankiai.backend.Robot.RobotRepository;
 
 @Service
 public class GridService {
@@ -73,14 +75,32 @@ public class GridService {
 
     private void addContainersToGrid(List<GridDTO> result) {
         List<Container> containers = containerRepository.findAll();
+        List<Robot> robots = robotRepository.findAll();
+        
+        // Create a list of container IDs that are being carried by robots
+        List<Integer> carriedContainerIds = robots.stream()
+                .filter(Robot::isCarryingContainer)
+                .map(robot -> robot.getContainer().getId())
+                .toList();
+        
+        // Add only containers that are not being carried
         for (Container container : containers) {
-            Grid grid = container.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CONTAINER"));
+            if (!carriedContainerIds.contains(container.getId())) {
+                Grid grid = container.getLocation();
+                result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CONTAINER"));
+            }
         }
     }
 
-    // TODO: Implementuot robotus paimt i grid
+    @Autowired
+    private RobotRepository robotRepository;
+
     private void addRobotsToGrid(List<GridDTO> result) {
+        List<Robot> robots = robotRepository.findAll();
+        for (Robot robot : robots) {
+            Grid grid = robot.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "ROBOT"));
+        }
     }
 
     // TODO: Implemenetuot krovimo stoteles i grid
