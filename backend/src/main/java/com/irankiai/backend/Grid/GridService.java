@@ -15,6 +15,10 @@ import com.irankiai.backend.Container.Container;
 import com.irankiai.backend.Container.ContainerRepository;
 import com.irankiai.backend.Robot.Robot;
 import com.irankiai.backend.Robot.RobotRepository;
+import com.irankiai.backend.CollectOrder.CollectOrder;
+import com.irankiai.backend.CollectOrder.CollectOrderRepository;
+import com.irankiai.backend.DeliverOrder.DeliverOrder;
+import com.irankiai.backend.DeliverOrder.DeliverOrderRepository;
 
 @Service
 public class GridService {
@@ -68,6 +72,12 @@ public class GridService {
                 case "CACHE":
                     addCachesToGrid(result);
                     break;
+                case "COLLECT_ORDER":
+                    addCollectOrdersToGrid(result);
+                    break;
+                case "DELIVER_ORDER":
+                    addDeliverOrdersToGrid(result);
+                    break;
             }
         }
 
@@ -79,6 +89,8 @@ public class GridService {
         addRobotsToGrid(result);
         addChargingStationsToGrid(result);
         addCachesToGrid(result);
+        addCollectOrdersToGrid(result);
+        addDeliverOrdersToGrid(result);
     }
 
     private void addContainersToGrid(List<GridDTO> result) {
@@ -130,4 +142,27 @@ public class GridService {
             result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CACHE"));
         }
     }
+
+    @Autowired
+    private CollectOrderRepository collectOrderRepository;
+
+    private void addCollectOrdersToGrid(List<GridDTO> result) {
+        List<CollectOrder> collectOrders = collectOrderRepository.findAll();
+        for (CollectOrder collectOrder : collectOrders) {
+            Grid grid = collectOrder.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "COLLECT_ORDER"));
+        }
+    }
+
+    @Autowired
+    private DeliverOrderRepository deliverOrderRepository;
+
+    private void addDeliverOrdersToGrid(List<GridDTO> result) {
+        List<DeliverOrder> deliverOrders = deliverOrderRepository.findAll();
+        for (DeliverOrder deliverOrder : deliverOrders) {
+            Grid grid = deliverOrder.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "DELIVER_ORDER"));
+        }
+    }
+
 }

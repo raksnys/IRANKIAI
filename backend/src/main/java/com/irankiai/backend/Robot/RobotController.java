@@ -96,4 +96,26 @@ public class RobotController {
         }
         return ResponseEntity.badRequest().build();
     }
+
+    @PostMapping("/robot/{robotId}/pickup/collectOrder/{collectOrderId}")
+    public ResponseEntity<Robot> pickupContainerFromCollectOrder(
+            @PathVariable Integer robotId,
+            @PathVariable Integer collectOrderId) {
+        Robot robot = robotService.pickupContainerFromCollectOrder(robotId, collectOrderId);
+        if (robot != null) {
+            return ResponseEntity.ok(robot);
+        }
+        return ResponseEntity.badRequest().build();
+    }
+
+    @PostMapping("/robot/{robotId}/drop/deliverOrder/{deliverOrderId}")
+    public ResponseEntity<Robot> dropContainerToDeliverOrder(
+            @PathVariable Integer robotId,
+            @PathVariable Integer deliverOrderId) {
+        Robot robot = robotService.dropContainerToDeliverOrder(robotId, deliverOrderId);
+        if (robot != null) {
+            return ResponseEntity.ok(robot);
+        }
+        return ResponseEntity.badRequest().build();
+    }
 }

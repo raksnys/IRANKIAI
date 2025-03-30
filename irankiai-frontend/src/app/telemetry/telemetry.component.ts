@@ -94,6 +94,18 @@ export class TelemetryComponent implements OnInit, OnDestroy {
           location: gridLocation
         };
         break;
+      case 'COLLECT_ORDER':
+        endpoint = `${environment.apiUrl}/collectOrder`;
+        payload = {
+          location: gridLocation
+        };
+        break;
+        case 'DELIVER_ORDER':
+          endpoint = `${environment.apiUrl}/deliverOrder`;
+          payload = {
+            location: gridLocation
+          };
+          break;
       // TODO: Pridet likusius cases...
       default:
         console.error(`Unsupported type: ${cellType}`);

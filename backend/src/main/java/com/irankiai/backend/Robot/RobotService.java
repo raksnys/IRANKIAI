@@ -12,6 +12,12 @@ import com.irankiai.backend.Container.ContainerRepository;
 import com.irankiai.backend.Cache.Cache;
 import com.irankiai.backend.Cache.CacheRepository;
 
+import com.irankiai.backend.CollectOrder.CollectOrder;
+import com.irankiai.backend.CollectOrder.CollectOrderRepository;
+
+import com.irankiai.backend.DeliverOrder.DeliverOrder;
+import com.irankiai.backend.DeliverOrder.DeliverOrderRepository;
+
 @Service
 public class RobotService {
 
@@ -20,6 +26,12 @@ public class RobotService {
 
     @Autowired
     private CacheRepository cacheRepository;
+
+    @Autowired
+    private CollectOrderRepository collectOrderRepository;
+
+    @Autowired
+    private DeliverOrderRepository deliverOrderRepository;
 
     @Autowired
     public RobotService(RobotRepository robotRepository, ContainerRepository containerRepository) {
@@ -126,6 +138,82 @@ public class RobotService {
 
             containerRepository.save(container);
             cacheRepository.save(cache);
+            return robotRepository.save(robot);
+        }
+        return null;
+    }
+
+    public Robot pickupContainerFromCollectOrder(Integer robotId, Integer collectOrderId) {
+        Optional<Robot> robotOpt = robotRepository.findById(robotId);
+        Optional<CollectOrder> collectOrderOpt = collectOrderRepository.findById(collectOrderId);
+
+        if (robotOpt.isPresent() && collectOrderOpt.isPresent()) {
+            Robot robot = robotOpt.get();
+            CollectOrder collectOrder = collectOrderOpt.get();
+
+            // Check if robot is already carrying a container
+            if (robot.isCarryingContainer()) {
+                return null; // Robot is already carrying a container
+            }
+
+            // Check if collect order has a container
+            if (!collectOrder.hasContainer()) {
+                return null; // Collect order does not have a container
+            }
+
+            // Get container from collect order
+            Container container = collectOrder.getContainer();
+
+            // Update container's location to robot's location
+            container.setLocation(robot.getLocation());
+
+            // Set container on robot
+            robot.setContainer(container);
+
+            // Remove container from collect order
+            collectOrder.setContainer(null);
+
+            // Save all changes
+            containerRepository.save(container);
+            collectOrderRepository.save(collectOrder);
+            return robotRepository.save(robot);
+        }
+        return null;
+    }
+
+    public Robot dropContainerToDeliverOrder(Integer robotId, Integer deliverOrderId) {
+        Optional<Robot> robotOpt = robotRepository.findById(robotId);
+        Optional<DeliverOrder> deliverOrderOpt = deliverOrderRepository.findById(deliverOrderId);
+
+        if (robotOpt.isPresent() && deliverOrderOpt.isPresent()) {
+            Robot robot = robotOpt.get();
+            DeliverOrder deliverOrder = deliverOrderOpt.get();
+
+            // Check if robot is carrying a container
+            if (!robot.isCarryingContainer()) {
+                return null; // Robot is not carrying a container
+            }
+
+            // Check if deliver order already has a container
+            if (deliverOrder.hasContainer()) {
+                return null; // Deliver order already has a container
+            }
+
+            // Get container from robot
+            Container container = robot.getContainer();
+
+            // Update container's location to deliver order's location
+            container.setLocation(deliverOrder.getLocation());
+
+            // Set container on deliver order
+            deliverOrder.setContainer(container);
+
+            // Remove container from robot
+            robot.setContainer(null);
+
+            // Save all changes
+            containerRepository.save(container);
+            deliverOrderRepository.save(deliverOrder);
             return robotRepository.save(robot);
         }
         return null;
