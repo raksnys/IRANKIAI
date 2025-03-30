@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { NgFor } from '@angular/common';
+import { NgFor,NgClass, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../environments/environment';
 import {interval, Subscription} from 'rxjs';
@@ -14,7 +14,7 @@ interface GridCell {
 
 @Component({
   selector: 'app-telemetry',
-  imports: [NgFor, FormsModule],
+  imports: [NgFor, FormsModule, NgClass, NgIf],
   templateUrl: './telemetry.component.html',
   styleUrl: './telemetry.component.scss',
   standalone: true
