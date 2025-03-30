@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.irankiai.backend.ChargingStation.ChargingStation;
+import com.irankiai.backend.ChargingStation.ChargingStationRepository;
 import com.irankiai.backend.Container.Container;
 import com.irankiai.backend.Container.ContainerRepository;
 import com.irankiai.backend.Robot.Robot;
@@ -76,14 +78,12 @@ public class GridService {
     private void addContainersToGrid(List<GridDTO> result) {
         List<Container> containers = containerRepository.findAll();
         List<Robot> robots = robotRepository.findAll();
-        
-        // Create a list of container IDs that are being carried by robots
+
         List<Integer> carriedContainerIds = robots.stream()
                 .filter(Robot::isCarryingContainer)
                 .map(robot -> robot.getContainer().getId())
                 .toList();
-        
-        // Add only containers that are not being carried
+
         for (Container container : containers) {
             if (!carriedContainerIds.contains(container.getId())) {
                 Grid grid = container.getLocation();
@@ -103,7 +103,17 @@ public class GridService {
         }
     }
 
-    // TODO: Implemenetuot krovimo stoteles i grid
+
+    // TODO: taip, turetu autowired visi virsuj but vienoj vietoj bet as bbd.
+
+    @Autowired
+    private ChargingStationRepository chargingStationRepository;
+
     private void addChargingStationsToGrid(List<GridDTO> result) {
+        List<ChargingStation> stations = chargingStationRepository.findAll();
+        for (ChargingStation station : stations) {
+            Grid grid = station.getLocation();
+            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "CHARGING_STATION"));
+        }
     }
 }
