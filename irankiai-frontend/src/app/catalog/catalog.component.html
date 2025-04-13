@@ -1,0 +1,27 @@
+<div class="catalog-container">
+    <h1>Product Catalog</h1>
+    
+    <div *ngIf="loading" class="loading-indicator">
+      <p>Loading products...</p>
+    </div>
+    
+    <div *ngIf="error" class="error-message">
+      <p>Error loading products. Please try again later.</p>
+    </div>
+    
+    <div *ngIf="!loading && !error" class="product-grid">
+      <div *ngIf="products.length === 0" class="no-products">
+        <p>No products found.</p>
+      </div>
+      
+      <div *ngFor="let product of products" class="product-card" [routerLink]="['/product', product.id]">
+        <div class="product-info">
+          <h2>{{product.name}}</h2>
+          <p class="product-price">€{{product.price}}</p>
+          <p class="product-weight">{{product.weight}} kg</p>
+          <p class="product-dimensions">{{product.dimensions}}</p>
+          <div class="product-color" [style.background-color]="product.color"></div>
+        </div>
+      </div>
+    </div>
+  </div>

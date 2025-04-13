@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
 public class Grid {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id; // Using Integer instead of int to allow null values
     private int x;
     private int y;
     private int z;
@@ -25,11 +25,11 @@ public class Grid {
         this.z = z;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
-
-    public void setId(int id) {
+    
+    public void setId(Integer id) {
         this.id = id;
     }
 

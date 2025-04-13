@@ -1,0 +1,54 @@
+<div class="confirmation-container">
+    <h1>Order Confirmation</h1>
+    
+    <div *ngIf="loading" class="loading">
+      <p>Loading your order details...</p>
+    </div>
+    
+    <div *ngIf="error" class="error">
+      <p>Sorry, we couldn't find your order. Please try again later.</p>
+      <a routerLink="/catalog" class="back-btn">Back to Catalog</a>
+    </div>
+    
+    <div *ngIf="!loading && !error && order" class="order-details">
+      <div class="order-header">
+        <div>
+          <p><strong>Order #:</strong> {{order.id}}</p>
+          <p><strong>Date:</strong> {{order.createdAt | date:'medium'}}</p>
+          <p><strong>Status:</strong> <span class="status">{{order.status}}</span></p>
+        </div>
+      </div>
+      
+      <div class="order-items">
+        <h2>Items</h2>
+        <div class="item-header">
+          <span class="product">Product</span>
+          <span class="price">Price</span>
+          <span class="quantity">Quantity</span>
+          <span class="total">Total</span>
+        </div>
+        
+        <div *ngFor="let item of order.items" class="order-item">
+          <span class="product">{{item.product.name}}</span>
+          <span class="price">€{{item.price}}</span>
+          <span class="quantity">{{item.quantity}}</span>
+          <span class="total">€{{item.price * item.quantity}}</span>
+        </div>
+      </div>
+      
+      <div class="order-total">
+        <span>Total:</span>
+        <span class="total-price">€{{order.totalPrice}}</span>
+      </div>
+      
+      <div class="robot-status">
+        <h2>Robot Fulfillment</h2>
+        <p>Your order is being processed by our automated system. Please wait while a robot collects your products.</p>
+        <p class="note">Note: In a real application, you would see live status updates here as the robot completes the tasks.</p>
+      </div>
+      
+      <div class="actions">
+        <a routerLink="/catalog" class="continue-shopping">Continue Shopping</a>
+      </div>
+    </div>
+  </div>

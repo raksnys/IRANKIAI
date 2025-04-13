@@ -39,7 +39,7 @@ public class RobotMovementService {
         this.chargingStationRepository = chargingStationRepository;
     }
 
-    @Scheduled(fixedRate = 1000)
+    //@Scheduled(fixedRate = 1000)
     public void moveRobots() {
         movementLock.lock();
         try {
