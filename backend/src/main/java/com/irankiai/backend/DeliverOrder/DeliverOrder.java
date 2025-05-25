@@ -27,6 +27,8 @@ public class DeliverOrder {
     @JoinColumn(name = "container_id")
     private Container container;
     
+    private Integer targetContainerIdForProductDelivery; // NEW FIELD
+    
     public DeliverOrder() {
     }
     
@@ -60,5 +62,13 @@ public class DeliverOrder {
     
     public boolean hasContainer() {
         return container != null;
+    }
+
+    public Integer getTargetContainerIdForProductDelivery() {
+        return targetContainerIdForProductDelivery;
+    }
+
+    public void setTargetContainerIdForProductDelivery(Integer targetContainerIdForProductDelivery) {
+        this.targetContainerIdForProductDelivery = targetContainerIdForProductDelivery;
     }
 }

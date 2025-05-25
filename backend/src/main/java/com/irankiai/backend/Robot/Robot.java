@@ -23,7 +23,7 @@ public class Robot {
     @JoinColumn(name = "grid_id")
     private Grid location;
     
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "container_id")
     private Container container;
     

@@ -80,12 +80,49 @@
       <div *ngIf="selectedContainer.products && selectedContainer.products.length > 0">
         <div class="product-item" *ngFor="let product of selectedContainer.products">
           <p><strong>{{product.name}}</strong> - €{{product.price}}</p>
-          <p>{{product.dimensions}} - {{product.weight}}kg</p>
         </div>
       </div>
       <div *ngIf="!selectedContainer.products || selectedContainer.products.length === 0">
         <p>No products in this container</p>
       </div>
+
+      <div class="container-actions">
+        <button (click)="toggleProductSelection()">{{ showProductSelection ? 'Cancel Adding Product' : 'Add Product via Robot' }}</button>
+      </div>
+
+      <div *ngIf="showProductSelection" class="product-selection-area">
+        <h4>Select a Product for Robot Delivery:</h4>
+        <div *ngIf="loadingProducts">
+          <p>Loading products...</p>
+        </div>
+        <div *ngIf="!loadingProducts && availableProducts.length === 0">
+          <p>No products available to add or failed to load products.</p>
+        </div>
+        <select *ngIf="!loadingProducts && availableProducts.length > 0" [(ngModel)]="selectedProductIdForContainer" name="selectedProductForDelivery">
+          <option [ngValue]="null" disabled>-- Select a Product --</option>
+          <option *ngFor="let product of availableProducts" [value]="product.id">
+            {{product.name}} (€{{product.price}})
+          </option>
+        </select>
+        
+        <!-- Add Quantity Input Field Here -->
+        <input 
+          *ngIf="!loadingProducts && availableProducts.length > 0 && selectedProductIdForContainer"
+          type="number" 
+          [(ngModel)]="deliveryQuantityForSelectedProduct" 
+          name="deliveryQuantity"
+          placeholder="Quantity" 
+          min="1" 
+          style="margin-left: 10px; width: 80px;">
+
+        <button 
+          *ngIf="!loadingProducts && availableProducts.length > 0" 
+          (click)="submitAddProductToSelectedContainer()" 
+          [disabled]="!selectedProductIdForContainer || !deliveryQuantityForSelectedProduct || deliveryQuantityForSelectedProduct < 1"> 
+          Assign Robot to Deliver Product
+        </button>
+      </div>
+
     </div>
   </div>
 </div>

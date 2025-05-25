@@ -20,7 +20,6 @@ public class RobotController {
 
     private final RobotService robotService;
 
-    @Autowired
     public RobotController(RobotService robotService) {
         this.robotService = robotService;
     }

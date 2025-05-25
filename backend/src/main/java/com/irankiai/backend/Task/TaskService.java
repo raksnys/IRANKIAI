@@ -1,9 +1,9 @@
 package com.irankiai.backend.Task;
 
+import com.irankiai.backend.CollectOrder.CollectOrder;
+import com.irankiai.backend.CollectOrder.CollectOrderRepository;
 import com.irankiai.backend.Container.Container;
 import com.irankiai.backend.Container.ContainerRepository;
-import com.irankiai.backend.DeliverOrder.DeliverOrder;
-import com.irankiai.backend.DeliverOrder.DeliverOrderRepository;
 import com.irankiai.backend.Grid.Grid;
 import com.irankiai.backend.Grid.GridRepository;
 import com.irankiai.backend.Order.Order;
@@ -14,327 +14,196 @@ import com.irankiai.backend.Product.Product;
 import com.irankiai.backend.Product.ProductRepository;
 import com.irankiai.backend.Robot.Robot;
 import com.irankiai.backend.Robot.RobotRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.irankiai.backend.Task.TaskStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Map; // For quantity check
+import java.util.stream.Collectors; // For quantity check
 
 @Service
 public class TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
-
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private ContainerRepository containerRepository;
-
     @Autowired
     private RobotRepository robotRepository;
-
-    @Autowired
-    private DeliverOrderRepository deliverOrderRepository;
-
     @Autowired
     private PathfindingService pathfindingService;
-
     @Autowired
     private GridRepository gridRepository;
+    @Autowired
+    private EntityManager entityManager;
+    @Autowired
+    private CollectOrderRepository collectOrderRepository;
 
     @Transactional
-    public Task createTaskForOrder(Order order) {
-        // Create a new task
+    public Task createProductDeliveryTask(Integer productId, Integer quantityToCollect, Integer targetContainerId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
+        Container finalTargetContainer = containerRepository.findById(targetContainerId)
+                .orElseThrow(() -> new RuntimeException("Target container not found: " + targetContainerId));
+
+        if (finalTargetContainer.getLocation() == null) {
+            throw new IllegalStateException("Target container " + targetContainerId + " has no location.");
+        }
+        Grid targetGridLocation = getOrCreateGrid(finalTargetContainer.getLocation());
+
+        CollectOrder sourceCollectOrder = findSourceCollectOrderForProduct(productId, quantityToCollect);
+        if (sourceCollectOrder == null || sourceCollectOrder.getLocation() == null) {
+            throw new RuntimeException("Suitable CollectOrder for product " + productId + " with quantity " + quantityToCollect + " not found or has no location.");
+        }
+        if (!entityManager.contains(sourceCollectOrder)) sourceCollectOrder = entityManager.merge(sourceCollectOrder);
+        if (sourceCollectOrder.getLocation() != null && !entityManager.contains(sourceCollectOrder.getLocation())) {
+            sourceCollectOrder.setLocation(entityManager.merge(sourceCollectOrder.getLocation()));
+        }
+
         Task task = new Task();
-        task.setOrder(order);
+        task.setStatus(TaskStatus.CREATED);
         
-        // Add this line - missing variable declaration
-        boolean hasAllInventory = true;
+        task.setProductDeliveryTargetContainerId(finalTargetContainer.getId());
+        task.setProductDeliveryTargetLocation(targetGridLocation);
         
-        // Create deliver order
-        DeliverOrder deliverOrder = new DeliverOrder();
+        task.setCollectOrder(sourceCollectOrder);
+
+        TaskItem taskItem = new TaskItem();
+        taskItem.setProduct(product);
+        taskItem.setQuantity(quantityToCollect);
+        task.addItem(taskItem);
         
-        // Set deliver location (could be a fixed pickup point)
-        Grid deliverLocation = new Grid(0, 0, 0); // Example location
+        Robot availableRobot = findAvailableRobot();
+        if (availableRobot == null) {
+            task.setStatus(TaskStatus.WAITING_FOR_ROBOT);
+            throw new RuntimeException("No available robots for the task.");
+        }
+        if (availableRobot.getContainer() == null) {
+             throw new IllegalStateException("Assigned robot " + availableRobot.getId() + " does not have a personal container for transport.");
+        }
+        task.setAssignedRobot(availableRobot);
         
-        // Save the Grid BEFORE associating it with DeliverOrder
-        deliverLocation = gridRepository.save(deliverLocation);
-        
-        deliverOrder.setLocation(deliverLocation);
-        deliverOrderRepository.save(deliverOrder);
-        
-        task.setDeliverOrder(deliverOrder);
-        order.setDeliverOrder(deliverOrder);
+        Grid robotCurrentGrid = getOrCreateGrid(availableRobot.getLocation());
+        Grid collectOrderGrid = getOrCreateGrid(sourceCollectOrder.getLocation());
 
-        // Find containers for each product in the order
-        for (OrderItem orderItem : order.getItems()) {
-            Product product = orderItem.getProduct();
-            int quantityNeeded = orderItem.getQuantity();
+        List<Grid> waypointsToCollect = pathfindingService.findPath(robotCurrentGrid, collectOrderGrid);
+        if (waypointsToCollect == null || waypointsToCollect.isEmpty()) {
+             task.setStatus(TaskStatus.ERROR_PATHFINDING);
+             throw new RuntimeException("Could not find path for robot to CollectOrder.");
+        }
+        Path initialPath = new Path(availableRobot, waypointsToCollect);
+        task.setPath(initialPath);
 
-            // Find containers with this product
-            List<Container> containers = findContainersWithProduct(product);
+        task.setStatus(TaskStatus.ASSIGNED);
+        return taskRepository.save(task);
+    }
 
-            if (containers.isEmpty()) {
-                // Instead of throwing exception, mark as missing and cache the task
-                task.addMissingProduct(product, quantityNeeded);
-                hasAllInventory = false;
-                continue; // Skip to next product
-            }
+    private CollectOrder findSourceCollectOrderForProduct(Integer productId, Integer quantityNeeded) {
+        List<CollectOrder> allCollectOrders = collectOrderRepository.findAll();
+        for (CollectOrder co : allCollectOrders) {
+            if (!entityManager.contains(co)) co = entityManager.merge(co);
+            if (co.getContainer() != null) { 
+                Container containerInCollectOrder = co.getContainer();
+                if (!entityManager.contains(containerInCollectOrder)) {
+                    containerInCollectOrder = entityManager.merge(containerInCollectOrder);
+                }
+                
+                // Corrected product ID comparison and added quantity check
+                // Assuming Product.getId() returns Integer. If it returns int, use ==.
+                Map<Integer, Long> productCounts = containerInCollectOrder.getProducts().stream()
+                    .collect(Collectors.groupingBy(Product::getId, Collectors.counting()));
 
-            int totalAvailableQuantity = 0;
-            // Calculate total available quantity across all containers
-            for (Container container : containers) {
-                totalAvailableQuantity += getProductQuantityInContainer(container, product);
-            }
-
-            if (totalAvailableQuantity < quantityNeeded) {
-                // Not enough inventory, track what's missing
-                task.addMissingProduct(product, quantityNeeded - totalAvailableQuantity);
-                hasAllInventory = false;
-
-                // Only create task items for available inventory
-                quantityNeeded = totalAvailableQuantity;
-            }
-
-            // Create task items for available inventory
-            if (quantityNeeded > 0) {
-                int remainingNeeded = quantityNeeded;
-
-                for (Container container : containers) {
-                    // Figure out how much to take from this container
-                    int containerQuantity = getProductQuantityInContainer(container, product);
-                    int quantityToTake = Math.min(remainingNeeded, containerQuantity);
-
-                    if (quantityToTake <= 0) {
-                        continue;
-                    }
-
-                    TaskItem taskItem = new TaskItem(product, container, quantityToTake);
-                    task.addItem(taskItem);
-
-                    remainingNeeded -= quantityToTake;
-
-                    if (remainingNeeded <= 0) {
-                        break;
-                    }
+                if (productCounts.getOrDefault(productId, 0L) >= quantityNeeded) {
+                    return co;
                 }
             }
         }
-
-        if (hasAllInventory) {
-            // If we have all inventory, proceed with normal task creation
-            Robot robot = findAvailableRobot();
-            if (robot == null) {
-                throw new RuntimeException("No available robots found");
-            }
-            task.setAssignedRobot(robot);
-
-            // Create a path for the robot to follow
-            createPathForTask(task);
-
-            // Set status and save
-            task.setStatus(TaskStatus.ASSIGNED);
-        } else {
-            // If we're missing inventory, set the status to waiting
-            task.setStatus(TaskStatus.WAITING_FOR_INVENTORY);
-            // We'll assign a robot and create a path when inventory becomes available
-        }
-
-        return taskRepository.save(task);
+        return null; 
     }
 
     private Robot findAvailableRobot() {
         List<Robot> robots = robotRepository.findAll();
-
-        // Find a robot that isn't already assigned to a task
         for (Robot robot : robots) {
-            if (!robot.isCarryingContainer()) {
-                // Check if robot is not assigned to any active task
-                List<Task> activeTasks = taskRepository.findByAssignedRobotAndStatusIn(
-                        robot,
-                        List.of(TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS, TaskStatus.COLLECTING,
-                                TaskStatus.DELIVERING));
+            if (!entityManager.contains(robot)) robot = entityManager.merge(robot);
+            
+            // Corrected list of active statuses. Add MOVING_TO_CHARGE and CHARGING to TaskStatus enum if they exist.
+            List<TaskStatus> activeStatuses = List.of(
+                TaskStatus.ASSIGNED, 
+                TaskStatus.COLLECTING, 
+                TaskStatus.DELIVERING, 
+                TaskStatus.IN_PROGRESS
+                // Add TaskStatus.MOVING_TO_CHARGE, TaskStatus.CHARGING here if they are defined in your enum
+            );
+            boolean isAssignedToActiveTask = taskRepository.existsByAssignedRobotAndStatusIn(robot, activeStatuses);
 
-                if (activeTasks.isEmpty()) {
-                    return robot;
-                }
+            if (!isAssignedToActiveTask && robot.getBatteryLevel() > 10) { 
+                 if (robot.getLocation() != null && !entityManager.contains(robot.getLocation())) {
+                    robot.setLocation(entityManager.merge(robot.getLocation()));
+                 }
+                return robot;
             }
         }
-
         return null;
     }
 
-    private List<Container> findContainersWithProduct(Product product) {
-        // This is a simplified example - you would need to implement
-        // logic to find containers that contain the specified product
-        return containerRepository.findByProductsId(product.getId());
-    }
-
-    private int getProductQuantityInContainer(Container container, Product product) {
-        // This is a simplified example - you would need to implement
-        // logic to determine how much of a product is in a container
-        return 10; // Example quantity
-    }
-
-    private void createPathForTask(Task task) {
-        Robot robot = task.getAssignedRobot();
-        
-        // Remove these problematic lines with undefined variables
-        // Grid waypoint = new Grid(x, y, z);
-        // waypoint = gridRepository.save(waypoint);
-        // path.addWaypoint(waypoint);
-        
-        // Create a list to store waypoints
-        List<Grid> waypoints = new ArrayList<>();
-        
-        // Start at robot's current location
-        Grid currentLocation = robot.getLocation();
-        
-        // Add container locations to waypoints
-        for (TaskItem item : task.getItems()) {
-            Grid containerLocation = item.getSourceContainer().getLocation();
-            
-            // Add path from current location to container
-            List<Grid> pathToContainer = pathfindingService.findPath(currentLocation, containerLocation);
-            waypoints.addAll(pathToContainer);
-            
-            // Update current location
-            currentLocation = containerLocation;
+    private Grid getOrCreateGrid(Grid gridFromEntity) {
+        if (gridFromEntity == null) throw new IllegalArgumentException("Grid from entity cannot be null for getOrCreateGrid");
+        if (gridFromEntity.getId() != null) {
+            if (!entityManager.contains(gridFromEntity)) { 
+                Grid foundGrid = gridRepository.findById(gridFromEntity.getId()).orElse(null);
+                if (foundGrid != null && foundGrid.getX() == gridFromEntity.getX() &&
+                    foundGrid.getY() == gridFromEntity.getY() && foundGrid.getZ() == gridFromEntity.getZ()) {
+                    return foundGrid; 
+                }
+            } else {
+                return gridFromEntity; 
+            }
         }
-        
-        // Add path to deliver location
-        Grid deliverLocation = task.getDeliverOrder().getLocation();
-        List<Grid> pathToDeliver = pathfindingService.findPath(currentLocation, deliverLocation);
-        waypoints.addAll(pathToDeliver);
-        
-        // Create and assign path
-        Path path = new Path(robot, waypoints);
-        task.setPath(path);
+        return gridRepository.findFirstByXAndYAndZ(gridFromEntity.getX(), gridFromEntity.getY(), gridFromEntity.getZ())
+                .orElseGet(() -> {
+                    System.out.println("TaskService: Creating and saving new grid at: " + gridFromEntity.getX() + "," + gridFromEntity.getY() + "," + gridFromEntity.getZ());
+                    return gridRepository.save(new Grid(gridFromEntity.getX(), gridFromEntity.getY(), gridFromEntity.getZ()));
+                });
     }
-    public Task getTask(Long taskId) {
-        return taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
-    }
-
-    public List<Task> getActiveTasks() {
-        return taskRepository.findByStatusIn(
-                List.of(TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS, TaskStatus.COLLECTING, TaskStatus.DELIVERING));
-    }
-
-    public Task updateTaskStatus(Long taskId, TaskStatus status) {
-        Task task = getTask(taskId);
-        task.setStatus(status);
-        return taskRepository.save(task);
-    }
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Scheduled(fixedRate = 60000) // Check every minute
+    
     @Transactional
-    public void checkAndActivateWaitingTasks() {
-        List<Task> waitingTasks = taskRepository.findByStatus(TaskStatus.WAITING_FOR_INVENTORY);
-
-        for (Task task : waitingTasks) {
-            boolean canActivate = true;
-            Map<Integer, Integer> stillMissing = new HashMap<>();
-
-            // Check each missing product
-            for (Map.Entry<Integer, Integer> entry : task.getMissingProducts().entrySet()) {
-                Integer productId = entry.getKey();
-                Integer quantityNeeded = entry.getValue();
-
-                Product product = productRepository.findById(productId)
-                        .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
-                // Check if we have enough inventory now
-                List<Container> containers = findContainersWithProduct(product);
-
-                int totalAvailableQuantity = 0;
-                for (Container container : containers) {
-                    totalAvailableQuantity += getProductQuantityInContainer(container, product);
-                }
-
-                if (totalAvailableQuantity < quantityNeeded) {
-                    // Still don't have enough inventory
-                    stillMissing.put(productId, quantityNeeded - totalAvailableQuantity);
-                    canActivate = false;
-
-                    // Create task items for any newly available inventory
-                    int newlyAvailable = totalAvailableQuantity;
-                    if (newlyAvailable > 0) {
-                        int remainingNeeded = newlyAvailable;
-
-                        for (Container container : containers) {
-                            int containerQuantity = getProductQuantityInContainer(container, product);
-                            int quantityToTake = Math.min(remainingNeeded, containerQuantity);
-
-                            if (quantityToTake <= 0) {
-                                continue;
-                            }
-
-                            TaskItem taskItem = new TaskItem(product, container, quantityToTake);
-                            task.addItem(taskItem);
-
-                            remainingNeeded -= quantityToTake;
-
-                            if (remainingNeeded <= 0) {
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    // We have enough inventory now, create task items
-                    int remainingNeeded = quantityNeeded;
-
-                    for (Container container : containers) {
-                        int containerQuantity = getProductQuantityInContainer(container, product);
-                        int quantityToTake = Math.min(remainingNeeded, containerQuantity);
-
-                        if (quantityToTake <= 0) {
-                            continue;
-                        }
-
-                        TaskItem taskItem = new TaskItem(product, container, quantityToTake);
-                        task.addItem(taskItem);
-
-                        remainingNeeded -= quantityToTake;
-
-                        if (remainingNeeded <= 0) {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Update the task
-            task.setMissingProducts(stillMissing);
-
-            // If we can activate the task
-            if (canActivate) {
-                // Find an available robot
-                Robot robot = findAvailableRobot();
-                if (robot != null) {
-                    task.setAssignedRobot(robot);
-
-                    // Create a path for the robot to follow
-                    createPathForTask(task);
-
-                    // Set status to assigned
-                    task.setStatus(TaskStatus.ASSIGNED);
-
-                    System.out.println("Activating previously waiting task: " + task.getId());
-                } else {
-                    // No robot available, keep waiting
-                    System.out.println("Task " + task.getId() + " has all inventory but no robot available");
-                }
-            }
-
-            taskRepository.save(task);
+    public Task createTaskForOrder(Order order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
         }
+        com.irankiai.backend.DeliverOrder.DeliverOrder finalDeliverOrder = order.getDeliverOrder();
+        if (finalDeliverOrder == null || finalDeliverOrder.getLocation() == null) {
+            throw new IllegalStateException("Order must have a DeliverOrder with a location for the final destination.");
+        }
+        finalDeliverOrder.setLocation(getOrCreateGrid(finalDeliverOrder.getLocation()));
+
+        Task task = new Task();
+        task.setOrder(order); 
+        task.setDeliverOrder(finalDeliverOrder); 
+
+        if (order.getItems().isEmpty()) {
+            throw new IllegalStateException("Order has no items to create a task for.");
+        }
+
+        for (OrderItem orderItem : order.getItems()) {
+            TaskItem taskItem = new TaskItem();
+            taskItem.setProduct(orderItem.getProduct());
+            taskItem.setQuantity(orderItem.getQuantity());
+            task.addItem(taskItem);
+        }
+        
+        Robot availableRobot = findAvailableRobot();
+        if (availableRobot == null) {
+            task.setStatus(TaskStatus.WAITING_FOR_ROBOT);
+        } else {
+            task.setAssignedRobot(availableRobot);
+            task.setStatus(TaskStatus.WAITING_FOR_INVENTORY); 
+        }
+        return taskRepository.save(task);
     }
 }

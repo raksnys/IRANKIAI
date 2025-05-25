@@ -160,8 +160,13 @@ public class GridService {
     private void addDeliverOrdersToGrid(List<GridDTO> result) {
         List<DeliverOrder> deliverOrders = deliverOrderRepository.findAll();
         for (DeliverOrder deliverOrder : deliverOrders) {
-            Grid grid = deliverOrder.getLocation();
-            result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "DELIVER_ORDER", deliverOrder.getId()));
+            // Only show DeliverOrder marker if it's not yet "fulfilled" (i.e., no container associated with it yet)
+            if (deliverOrder.getContainer() == null) { 
+                Grid grid = deliverOrder.getLocation();
+                if (grid != null) { // Always check for null location
+                    result.add(new GridDTO(grid.getX(), grid.getY(), grid.getZ(), "DELIVER_ORDER", deliverOrder.getId()));
+                }
+            }
         }
     }
 

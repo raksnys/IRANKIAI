@@ -19,19 +19,19 @@ public class TaskItem {
     private Product product;
     
     @ManyToOne
-    @JoinColumn(name = "container_id")
+    @JoinColumn(name = "container_id") // This is the source container for this item
     private Container sourceContainer;
     
     private int quantity;
     
-    private boolean collected = false;
+    private boolean collected = false; // Field to track if this item has been collected
     
     // Constructors
     public TaskItem() {}
     
     public TaskItem(Product product, Container container, int quantity) {
         this.product = product;
-        this.sourceContainer = container;
+        this.sourceContainer = container; // Set the source container
         this.quantity = quantity;
     }
     
@@ -75,11 +75,11 @@ public class TaskItem {
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
-    
+
     public boolean isCollected() {
         return collected;
     }
-    
+
     public void setCollected(boolean collected) {
         this.collected = collected;
     }

@@ -1,53 +1,82 @@
 package com.irankiai.backend.Task;
 
-import com.irankiai.backend.DeliverOrder.DeliverOrder;
+import com.irankiai.backend.CollectOrder.CollectOrder;
+import com.irankiai.backend.DeliverOrder.DeliverOrder; // Keep for other task types if needed
+import com.irankiai.backend.Grid.Grid; // Import Grid
 import com.irankiai.backend.Order.Order;
 import com.irankiai.backend.Path.Path;
 import com.irankiai.backend.Product.Product;
 import com.irankiai.backend.Robot.Robot;
 import jakarta.persistence.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Entity
+@Table(name = "tasks")
 public class Task {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "robot_id")
+    @JoinColumn(name = "assigned_robot_id")
     private Robot assignedRobot;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @Enumerated(EnumType.STRING)
+    private TaskStatus status;
 
-    @OneToOne
-    @JoinColumn(name = "deliver_order_id")
-    private DeliverOrder deliverOrder;
-
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TaskItem> items = new ArrayList<>();
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "path_id")
+    @JoinColumn(name = "path_id", referencedColumnName = "id")
     private Path path;
 
-    @Enumerated(EnumType.STRING)
-    private TaskStatus status = TaskStatus.CREATED;
+    @ManyToOne // A task belongs to an order (e.g. for full order fulfillment)
+    @JoinColumn(name = "order_id")
+    private Order order;
 
-    @ElementCollection
-    @CollectionTable(name = "missing_products", joinColumns = @JoinColumn(name = "task_id"))
-    private Map<Integer, Integer> missingProducts = new HashMap<>(); // Map of product ID to quantity needed
+    // This DeliverOrder might be used for complex order fulfillment,
+    // but not for direct product-to-container delivery as per new logic.
+    @ManyToOne(cascade = CascadeType.PERSIST) 
+    @JoinColumn(name = "deliver_order_id")
+    private DeliverOrder deliverOrder; 
 
-    // Constructors
+    @ManyToOne(cascade = CascadeType.PERSIST) 
+    @JoinColumn(name = "collect_order_id") 
+    private CollectOrder collectOrder; 
+
+    // New fields for direct product delivery to a container
+    private Integer productDeliveryTargetContainerId;
+
+    @ManyToOne
+    @JoinColumn(name = "product_delivery_target_location_id")
+    private Grid productDeliveryTargetLocation;
+
+
     public Task() {
     }
 
-    // Getters and setters
+    // Getters and Setters for new fields
+    public Integer getProductDeliveryTargetContainerId() {
+        return productDeliveryTargetContainerId;
+    }
+
+    public void setProductDeliveryTargetContainerId(Integer productDeliveryTargetContainerId) {
+        this.productDeliveryTargetContainerId = productDeliveryTargetContainerId;
+    }
+
+    public Grid getProductDeliveryTargetLocation() {
+        return productDeliveryTargetLocation;
+    }
+
+    public void setProductDeliveryTargetLocation(Grid productDeliveryTargetLocation) {
+        this.productDeliveryTargetLocation = productDeliveryTargetLocation;
+    }
+
+    // ... existing getters and setters ...
     public Long getId() {
         return id;
     }
@@ -60,8 +89,43 @@ public class Task {
         return assignedRobot;
     }
 
-    public void setAssignedRobot(Robot robot) {
-        this.assignedRobot = robot;
+    public void setAssignedRobot(Robot assignedRobot) {
+        this.assignedRobot = assignedRobot;
+    }
+
+    public TaskStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TaskStatus status) {
+        this.status = status;
+    }
+
+    public List<TaskItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<TaskItem> items) {
+        this.items = items;
+        if (this.items != null) {
+            this.items.forEach(item -> item.setTask(this)); 
+        }
+    }
+
+    public void addItem(TaskItem item) {
+        this.items.add(item);
+        item.setTask(this);
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public void setPath(Path path) {
+        this.path = path;
+        if (this.path != null) { // Ensure bidirectional link if Path has setTask
+            this.path.setTask(this);
+        }
     }
 
     public Order getOrder() {
@@ -80,55 +144,22 @@ public class Task {
         this.deliverOrder = deliverOrder;
     }
 
-    public List<TaskItem> getItems() {
-        return items;
+    public CollectOrder getCollectOrder() {
+        return collectOrder;
     }
 
-    public void setItems(List<TaskItem> items) {
-        this.items = items;
+    public void setCollectOrder(CollectOrder collectOrder) {
+        this.collectOrder = collectOrder;
     }
 
-    public void addItem(TaskItem item) {
-        items.add(item);
-        item.setTask(this);
-    }
-
-    public Path getPath() {
-        return path;
-    }
-
-    public void setPath(Path path) {
-        this.path = path;
-    }
-
-    public TaskStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TaskStatus status) {
-        this.status = status;
-    }
-
-    public boolean isAllItemsCollected() {
-        return items.stream().allMatch(TaskItem::isCollected);
-    }
-
-    // Update getter and setter
-    public Map<Integer, Integer> getMissingProducts() {
-        return missingProducts;
-    }
-
-    public void setMissingProducts(Map<Integer, Integer> missingProducts) {
-        this.missingProducts = missingProducts;
-    }
-
-    // Update helper method
-    public void addMissingProduct(Product product, int quantity) {
-        missingProducts.put(product.getId(), missingProducts.getOrDefault(product.getId(), 0) + quantity);
-    }
-
-    // Helper method to check if waiting for inventory
-    public boolean isWaitingForInventory() {
-        return !missingProducts.isEmpty();
+    public List<Product> getMissingProducts() {
+        if (this.items == null) {
+            return new ArrayList<>();
+        }
+        return this.items.stream()
+                .filter(item -> !item.isCollected()) 
+                .map(TaskItem::getProduct)
+                .distinct() 
+                .collect(Collectors.toList());
     }
 }
