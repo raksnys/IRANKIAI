@@ -14,13 +14,16 @@
 </nav> -->
 
 <header>
-    <p class="logo" routerLink="/">Robotizuotas sandėlys</p>
+    <p class="logo" routerLink="/dashboard">Robotizuotas sandėlys</p>
     <nav>
         <ul class="nav__links">
-            <li><a routerLink="/catalog">Prekės</a></li>
-            <li><a routerLink="/orders">Užsakymai</a></li>
-            <li><a routerLink="/">UserFN UserLN</a></li>
+            <li *ngFor="let link of getAvailableLinks()">
+                <a [routerLink]="link.path" routerLinkActive="active">{{ link.label }}</a>
+            </li>
         </ul>
     </nav>
-    <a class="cta"><button>Action</button></a>
+    <div class="nav__actions">
+        <span class="user-role" *ngIf="auth.isLoggedIn()">{{ getUserDisplayName() }}</span>
+        <button *ngIf="auth.isLoggedIn()" (click)="auth.logout()" class="logout-btn">Atsijungti</button>
+    </div>
 </header>

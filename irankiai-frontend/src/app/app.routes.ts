@@ -10,21 +10,24 @@ import { RegisterComponent } from './register.component';
 import { AdminComponent } from './admin.component';
 import { BuyerComponent } from './buyer.component';
 import { MerchantComponent } from './merchant.component';
-import { UserComponent } from './user.component';
+import { AuthGuard } from './services/auth.guard';
+import { DashboardComponent } from './dashboard/dashboard.component';
+import { OrderConfirmationComponent } from './order-confirmation/order-confirmation.component';
 
+
+// Always keep imports on a single line for better readability and consistency
 export const routes: Routes = [
     {path: 'login', component: LoginComponent},
     {path: 'register', component: RegisterComponent},
-    {path: 'admin', component: AdminComponent},
-    {path: 'buyer', component: BuyerComponent},
-    {path: 'merchant', component: MerchantComponent},
-    {path: 'user', component: UserComponent},
-    {path: 'test', component: TestComponent},
-    {path: 'add-product', component: CreateProductComponent},
-    {path: 'product/:id', component: ProductComponent},
-    {path: 'telemetry', component: TelemetryComponent},
-    {path: 'catalog', component: CatalogComponent},
-    {path: 'cart', component: CartComponent},
-    {path: '', redirectTo: '/login', pathMatch: 'full'},
-    {path: '**', redirectTo: '/login'},
+    {path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard], data: { role: ['admin', 'buyer', 'merchant'] }},
+    {path: 'order-confirmation/:id', component: OrderConfirmationComponent, canActivate: [AuthGuard], data: { role: ['buyer'] }},
+    {path: 'test', component: TestComponent, canActivate: [AuthGuard], data: { role: ['admin', 'merchant'] }},
+    {path: 'add-product', component: CreateProductComponent, canActivate: [AuthGuard], data: { role: ['admin', 'merchant'] }},
+    {path: 'product/:id', component: ProductComponent, canActivate: [AuthGuard], data: { role: ['admin', 'buyer', 'merchant'] }},
+    {path: 'telemetry', component: TelemetryComponent, canActivate: [AuthGuard], data: { role: ['admin', 'merchant'] }},
+    {path: 'orders', component: OrderConfirmationComponent, canActivate: [AuthGuard], data: { role: ['admin', 'buyer', 'merchant'] }},
+    {path: 'catalog', component: CatalogComponent, canActivate: [AuthGuard], data: { role: ['admin', 'buyer', 'merchant'] }},
+    {path: 'cart', component: CartComponent, canActivate: [AuthGuard], data: { role: ['admin', 'buyer'] }},
+    {path: '', redirectTo: '/dashboard', pathMatch: 'full'},
+    {path: '**', redirectTo: '/dashboard'},
 ];

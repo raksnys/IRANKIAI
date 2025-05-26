@@ -16,9 +16,8 @@ import { AuthService } from './services/auth.service';
           <input [(ngModel)]="username" name="username" placeholder="Username" required />
           <input [(ngModel)]="password" name="password" type="password" placeholder="Password" required />
           <select [(ngModel)]="role" name="role" required>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
             <option value="buyer">Buyer</option>
+            <option value="admin">Admin</option>
             <option value="merchant">Merchant</option>
           </select>
           <button type="submit" class="register-btn">Register</button>
@@ -106,7 +105,7 @@ import { AuthService } from './services/auth.service';
 export class RegisterComponent {
   username = '';
   password = '';
-  role = 'user';
+  role = 'buyer';
   error = '';
   success = false;
 

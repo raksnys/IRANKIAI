@@ -111,14 +111,7 @@ export class LoginComponent {
       if (res.startsWith('error')) {
         this.error = 'Invalid username or password';
       } else {
-        // redirect pagal role
-        const info = this.auth.getUserInfo();
-        if (info) {
-          if (info.role === 'admin') this.router.navigate(['/admin']);
-          else if (info.role === 'buyer') this.router.navigate(['/buyer']);
-          else if (info.role === 'merchant') this.router.navigate(['/merchant']);
-          else this.router.navigate(['/user']);
-        }
+        this.router.navigate(['/dashboard']);
       }
     });
   }

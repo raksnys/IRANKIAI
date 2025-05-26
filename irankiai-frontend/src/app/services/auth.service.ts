@@ -6,7 +6,7 @@ import { tap, catchError } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = '/api';
+  private apiUrl = 'http://localhost:777/api/api';
   private storageKey = 'userInfo'; // saugosim id:role
 
   constructor(private http: HttpClient, private router: Router) {}
@@ -41,5 +41,19 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.getUserInfo();
+  }
+
+  isAuthenticated(): boolean {
+    return this.isLoggedIn();
+  }
+
+  hasRole(requiredRoles: string | string[]): boolean {
+    const userInfo = this.getUserInfo();
+    if (!userInfo) return false;
+
+    if (Array.isArray(requiredRoles)) {
+      return requiredRoles.includes(userInfo.role);
+    }
+    return userInfo.role === requiredRoles;
   }
 } 
