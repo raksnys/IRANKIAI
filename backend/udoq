@@ -1,0 +1,23 @@
+[0;1;31m×[0m mariadb.service - MariaDB 11.7.2 database server
+     Loaded: loaded (]8;;file://5430/usr/lib/systemd/system/mariadb.service\/usr/lib/systemd/system/mariadb.service]8;;\; [0;1;32menabled[0m; preset: [0;1;38:5:185mdisabled[0m)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Mon 2025-05-26 01:11:40 EEST; 5s ago
+ Invocation: 7c14b700a2cf461198da0e95c1ac8bdb
+       Docs: ]8;;man:mariadbd(8)\man:mariadbd(8)]8;;\
+             ]8;;https://mariadb.com/kb/en/library/systemd/\https://mariadb.com/kb/en/library/systemd/]8;;\
+    Process: 37786 ExecStartPre=/bin/sh -c [ ! -e /usr/bin/galera_recovery ] && VAR= ||   VAR=`/usr/bin/galera_recovery`; [ $? -eq 0 ]   && echo _WSREP_START_POSITION=$VAR > /run/mysqld/wsrep-start-position || exit 1 (code=exited, status=0/SUCCESS)
+    Process: 37812 ExecStart=/usr/bin/mariadbd $MYSQLD_OPTS $_WSREP_NEW_CLUSTER $_WSREP_START_POSITION [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 37812 (code=exited, status=1/FAILURE)
+     Status: "[0;1;36mMariaDB server is down[0m"
+   Mem peak: 378M
+        CPU: 337ms
+
+May 26 01:11:39 5430 mariadbd[37812]: 2025-05-26  1:11:39 0 [ERROR] Could not open mysql.plugin table: "Table 'mysql.plugin' doesn't exist". Some plugins may be not loaded
+May 26 01:11:39 5430 mariadbd[37812]: 2025-05-26  1:11:39 0 [ERROR] Can't open and lock privilege tables: Table 'mysql.servers' doesn't exist
+May 26 01:11:39 5430 mariadbd[37812]: 2025-05-26  1:11:39 0 [Note] Server socket created on IP: '0.0.0.0'.
+May 26 01:11:39 5430 mariadbd[37812]: 2025-05-26  1:11:39 0 [Note] Server socket created on IP: '::'.
+May 26 01:11:39 5430 mariadbd[37812]: 2025-05-26  1:11:39 0 [ERROR] Fatal error: Can't open and lock privilege tables: Table 'mysql.db' doesn't exist
+May 26 01:11:39 5430 mariadbd[37812]: 2025-05-26  1:11:39 0 [ERROR] Aborting
+May 26 01:11:40 5430 systemd[1]: [0;1;39m[0;1;31m[0;1;39mmariadb.service: Main process exited, code=exited, status=1/FAILURE[0m
+May 26 01:11:40 5430 systemd[1]: [0;1;38:5:185m[0;1;39m[0;1;38:5:185mmariadb.service: Failed with result 'exit-code'.[0m
+May 26 01:11:40 5430 systemd[1]: [0;1;31m[0;1;39m[0;1;31mFailed to start MariaDB 11.7.2 database server.[0m
+May 26 01:11:40 5430 systemd[1]: mariadb.service: Consumed 337ms CPU time, 378M memory peak.

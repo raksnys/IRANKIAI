@@ -2,7 +2,6 @@ package com.irankiai.backend.Cache;
 
 import com.irankiai.backend.Container.Container;
 import com.irankiai.backend.Grid.Grid;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,21 +14,21 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "caches")
 public class Cache {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    
-    @OneToOne(cascade = CascadeType.ALL)
+
+    @OneToOne
     @JoinColumn(name = "grid_id")
     private Grid location;
-    
+
     @OneToOne
     @JoinColumn(name = "container_id")
     private Container container;
-    
-    public Cache() {
-    }
-    
+
+    public Cache() {}
+
     public Cache(Grid location) {
         this.location = location;
     }
@@ -57,7 +56,7 @@ public class Cache {
     public void setContainer(Container container) {
         this.container = container;
     }
-    
+
     public boolean hasContainer() {
         return container != null;
     }

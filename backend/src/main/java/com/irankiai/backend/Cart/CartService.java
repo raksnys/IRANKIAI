@@ -54,18 +54,24 @@ public class CartService {
     @Transactional
     public Cart updateCartItemQuantity(Long userId, Long productId, int quantity) {
         Cart cart = getOrCreateCart(userId);
-        
-        cart.getItems().stream()
+
+        Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId() == productId.intValue())
-                .findFirst()
-                .ifPresent(item -> {
-                    if (quantity <= 0) {
-                        cart.removeItem(item);
-                    } else {
-                        item.setQuantity(quantity);
-                    }
-                });
-        
+                .findFirst();
+
+        if (existingItem.isPresent()) {
+            if (quantity <= 0) {
+                cart.removeItem(existingItem.get());
+            } else {
+                existingItem.get().setQuantity(quantity);
+            }
+        } else if (quantity > 0) {
+            // Add new item if not present and quantity > 0
+            Product product = productRepository.findById(productId.intValue())
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+            CartItem newItem = new CartItem(product, quantity);
+            cart.addItem(newItem);
+        }
         return cartRepository.save(cart);
     }
     
