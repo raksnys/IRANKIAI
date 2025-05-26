@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
-import { environment } from '../environments/environment';
+import { Component, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { HttpClient } from "@angular/common/http";
+import { RouterLink } from "@angular/router";
+import { environment } from "../environments/environment";
+import { CartService } from "../services/cart.service";
 
 interface Product {
   id: number;
@@ -14,36 +15,50 @@ interface Product {
 }
 
 @Component({
-  selector: 'app-catalog',
+  selector: "app-catalog",
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './catalog.component.html',
-  styleUrl: './catalog.component.scss'
+  templateUrl: "./catalog.component.html",
+  styleUrl: "./catalog.component.scss",
 })
 export class CatalogComponent implements OnInit {
   products: Product[] = [];
   loading = true;
   error = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private cartService: CartService,
+  ) {}
 
   ngOnInit(): void {
     this.fetchProducts();
   }
 
   fetchProducts(): void {
-    // Note: You may need to create this endpoint in the backend
-    this.http.get<Product[]>(`${environment.apiUrl}/products`)
-      .subscribe({
-        next: (data) => {
-          this.products = data;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error fetching products:', err);
-          this.error = true;
-          this.loading = false;
-        }
-      });
+    this.http.get<Product[]>(`${environment.apiUrl}/products`).subscribe({
+      next: (data) => {
+        this.products = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error("Error fetching products:", err);
+        this.error = true;
+        this.loading = false;
+      },
+    });
+  }
+
+  addToCart(product: Product, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.cartService.addToCart(product.id, 1).subscribe({
+      next: () => {
+        // Optionally show a success message or update UI
+      },
+      error: (err) => {
+        console.error("Error adding to cart:", err);
+      },
+    });
   }
 }

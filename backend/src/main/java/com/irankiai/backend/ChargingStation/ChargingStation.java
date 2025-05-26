@@ -1,7 +1,6 @@
 package com.irankiai.backend.ChargingStation;
 
 import com.irankiai.backend.Grid.Grid;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,25 +13,25 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "charging_stations")
 public class ChargingStation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    
-    @OneToOne(cascade = CascadeType.ALL)
+
+    @OneToOne
     @JoinColumn(name = "grid_id")
     private Grid location;
-    
+
     // NOTE: gal reiktu admin leist valdyt tokias nesamones?
     // NOTE2: pridejau endpoint'us getter setter, jei ka ateiciai turim
     private int chargeRate = 1;
-    
-    public ChargingStation() {
-    }
-    
+
+    public ChargingStation() {}
+
     public ChargingStation(Grid location) {
         this.location = location;
     }
-    
+
     public ChargingStation(Grid location, int chargeRate) {
         this.location = location;
         this.chargeRate = chargeRate;

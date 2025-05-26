@@ -22,6 +22,7 @@
           <p class="product-dimensions">{{product.dimensions}}</p>
           <div class="product-color" [style.background-color]="product.color"></div>
         </div>
+        <button class="add-to-cart-btn" (click)="addToCart(product, $event); $event.stopPropagation(); $event.preventDefault();">Add to Cart</button>
       </div>
     </div>
   </div>
